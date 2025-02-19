@@ -15,8 +15,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class Main {
     public record EventData(String message) { }
     public static void main(String[] args) {
-        var clients = new ConcurrentLinkedQueue<SseClient>();
-
         StreamingChatLanguageModel model = AnthropicStreamingChatModel.builder()
                 .apiKey(System.getenv("ANTHROPIC_API_KEY"))
                 .modelName(AnthropicChatModelName.CLAUDE_3_5_SONNET_20241022)
@@ -27,9 +25,6 @@ public class Main {
                 })
                 .post("/stream", new SseHandler(sseClient -> {
                     sseClient.keepAlive();
-
-                    clients.add(sseClient);
-                    sseClient.onClose(() -> clients.remove(sseClient));
 
                     String message = sseClient.ctx().queryParam("message");
 
