@@ -1,7 +1,9 @@
 package com.mycodefu;
 
+import dev.langchain4j.model.anthropic.AnthropicChatModel;
 import dev.langchain4j.model.anthropic.AnthropicChatModelName;
 import dev.langchain4j.model.anthropic.AnthropicStreamingChatModel;
+import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
@@ -12,13 +14,23 @@ import io.javalin.http.staticfiles.Location;
 public class Main {
     public record EventData(String message) { }
     public static void main(String[] args) {
-        StreamingChatLanguageModel model = AnthropicStreamingChatModel.builder()
+        StreamingChatLanguageModel modelStreaming = AnthropicStreamingChatModel.builder()
+                .apiKey(System.getenv("ANTHROPIC_API_KEY"))
+                .modelName(AnthropicChatModelName.CLAUDE_3_5_SONNET_20241022)
+                .build();
+
+        ChatLanguageModel model = AnthropicChatModel.builder()
                 .apiKey(System.getenv("ANTHROPIC_API_KEY"))
                 .modelName(AnthropicChatModelName.CLAUDE_3_5_SONNET_20241022)
                 .build();
 
         Javalin.create(config -> {
                     config.staticFiles.add("/public", Location.CLASSPATH);
+                })
+                .get("/chat", ctx -> {
+                    String message = ctx.queryParam("message");
+                    String response = model.chat(message);
+                    ctx.json(new EventData(response));
                 })
                 .post("/stream", new SseHandler(sseClient -> {
                     sseClient.keepAlive();
@@ -27,7 +39,7 @@ public class Main {
 
                     sseClient.sendEvent("init", new EventData(message));
 
-                    model.chat(message, new StreamingChatResponseHandler() {
+                    modelStreaming.chat(message, new StreamingChatResponseHandler() {
                         @Override
                         public void onPartialResponse(String s) {
                             sseClient.sendEvent("message", new EventData(s));
