@@ -6,11 +6,8 @@ import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import io.javalin.Javalin;
-import io.javalin.http.sse.SseClient;
 import io.javalin.http.sse.SseHandler;
 import io.javalin.http.staticfiles.Location;
-
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Main {
     public record EventData(String message) { }
